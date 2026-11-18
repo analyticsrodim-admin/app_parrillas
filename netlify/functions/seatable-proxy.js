@@ -38,7 +38,7 @@ exports.handler = async (event, context) => {
     const queryResponse = await fetch(`${SEATABLE_SERVER}/dtable-db/api/v1/query/${baseUuid}/`, {
       method: 'POST',
       headers: {
-        'Authorization': `Token ${baseToken}`,
+        'Authorization': `Bearer ${SEATABLE_API_TOKEN}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
