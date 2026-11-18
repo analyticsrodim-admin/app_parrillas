@@ -12,16 +12,23 @@ exports.handler = async (event, context) => {
   const SEATABLE_SERVER = 'https://cloud.seatable.io'; 
   
   try {
-    // 3. OBTENER TOKEN TEMPORAL DE LA BASE
+    // 1. Obtener Token de SeaTable
     const authResponse = await fetch(`${SEATABLE_SERVER}/api/v2.1/dtable/app-access-token/`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${SEATABLE_API_TOKEN}`,
+        'Authorization': `Bearer ${SEATABLE_API_TOKEN}`, // Asegúrate de que sea Bearer
         'Accept': 'application/json; charset=utf-8; indent=4',
       },
     });
 
-    if (!authResponse.ok) throw new Error('Error de autenticación con SeaTable');
+    // --- NUEVO CÓDIGO DE DIAGNÓSTICO ---
+    if (!authResponse.ok) {
+      // Leemos el texto de la respuesta para ver qué dice SeaTable
+      const errorText = await authResponse.text(); 
+      // Lanzamos un error con el código de estado y el mensaje real
+      throw new Error(`Error de SeaTable al autenticar (Status ${authResponse.status}): ${errorText}`);
+    }
+    // --- FIN DEL NUEVO CÓDIGO ---
     
     const authData = await authResponse.json();
     const baseToken = authData.access_token;
