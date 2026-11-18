@@ -7,17 +7,16 @@ exports.handler = async (event, context) => {
   }
 
   const SEATABLE_API_TOKEN = process.env.SEATABLE_API_TOKEN; 
-  // Nueva URL base para el API Gateway
-  const SEATABLE_GATEWAY = 'https://cloud.seatable.io/api-gateway'; 
+  const SEATABLE_SERVER = 'https://cloud.seatable.io'; // Sin /api-gateway al final
   
   try {
     if (!SEATABLE_API_TOKEN) throw new Error("La variable SEATABLE_API_TOKEN no está configurada.");
 
-    // 1. Obtener Token de la Base (usando el nuevo endpoint del gateway)
-    const authResponse = await fetch(`${SEATABLE_GATEWAY}/api/v2/dtable/app-access-token/`, {
+    // 1. Obtener Token de la Base (Ruta correcta SIN /api-gateway)
+    const authResponse = await fetch(`${SEATABLE_SERVER}/api/v2.1/dtable/app-access-token/`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${SEATABLE_API_TOKEN}`, // Se recomienda Bearer
+        'Authorization': `Bearer ${SEATABLE_API_TOKEN}`,
         'Accept': 'application/json',
       },
     });
@@ -31,17 +30,16 @@ exports.handler = async (event, context) => {
     const baseToken = authData.access_token;
     const baseUuid = authData.dtable_uuid;
 
-    // 2. Realizar la consulta SQL a través del gateway
+    // 2. Realizar la consulta SQL (Ruta CON /api-gateway)
     const body = JSON.parse(event.body);
     const idToSearch = body.idToSearch; 
 
     const sqlQuery = `SELECT \`CdgUnico\`, \`Médico\`, \`Parilla\`, \`Cdg CUP\` FROM \`parrillas_sugeridas\` WHERE \`CdgUnico\` = '${idToSearch}' LIMIT 1`;
 
-    // El endpoint de consulta SQL en el gateway suele ser /api/v2/dtables/{uuid}/sql/
-    const queryResponse = await fetch(`${SEATABLE_GATEWAY}/api/v2/dtables/${baseUuid}/sql/`, {
+    const queryResponse = await fetch(`${SEATABLE_SERVER}/api-gateway/api/v2/dtables/${baseUuid}/sql/`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${baseToken}`, // Usamos el token de la base obtenido
+        'Authorization': `Bearer ${baseToken}`, // Usamos el token de la base
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ sql: sqlQuery }),
