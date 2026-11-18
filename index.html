@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Parrillas</title>
+    
+    <!-- Bootstrap y Iconos -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    
+    <!-- Netlify Identity Widget -->
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+
+    <style>
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; }
+        .app-container { display: none; max-width: 900px; margin: 5vh auto; }
+        .login-container { max-width: 400px; margin: 15vh auto; text-align: center; }
+        .card { border: none; border-radius: 1rem; box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15); }
+        .navbar-custom { background: #fff; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075); margin-bottom: 2rem; }
+        
+        /* Estilos para resaltar los botones seleccionados */
+        .btn-check:checked + .btn-outline-primary {
+            background-color: #0d6efd;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PANTALLA DE LOGIN -->
+    <div id="login-screen" class="login-container">
+        <div class="card p-5">
+            <h2 class="mb-4 text-primary"><i class="bi bi-shield-lock-fill"></i></h2>
+            <h4 class="mb-4">Acceso al Sistema</h4>
+            <p class="text-muted mb-4">Inicie sesión para consultar la base de datos.</p>
+            <button class="btn btn-primary btn-lg w-100" onclick="abrirLoginNetlify()">
+                <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA DE LA APLICACIÓN -->
+    <div id="app-screen" class="app-container">
+        <nav class="navbar navbar-expand-lg navbar-custom rounded px-3">
+            <div class="container-fluid">
+                <span class="navbar-brand mb-0 h1 text-primary"><i class="bi bi-search"></i> Consulta de Parrillas</span>
+                <div class="d-flex align-items-center">
+                    <span class="me-3 fw-bold text-secondary" id="welcome-text"></span>
+                    <button class="btn btn-outline-danger btn-sm" onclick="cerrarSesionNetlify()">
+                        <i class="bi bi-box-arrow-right"></i> Salir
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="card mb-4">
+            <div class="card-body p-4">
+                
+                <!-- 1. Botones Seleccionables de Línea -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold mb-2">Seleccione la Línea:</label>
+                    <div class="btn-group w-100" role="group" aria-label="Seleccionar Línea">
+                        <input type="radio" class="btn-check" name="linea" id="linea-LEG" value="LEG" autocomplete="off">
+                        <label class="btn btn-outline-primary py-2" for="linea-LEG">LEG</label>
+
+                        <input type="radio" class="btn-check" name="linea" id="linea-PRI" value="PRI" autocomplete="off">
+                        <label class="btn btn-outline-primary py-2" for="linea-PRI">PRI</label>
+
+                        <input type="radio" class="btn-check" name="linea" id="linea-CMB" value="CMB" autocomplete="off" checked>
+                        <label class="btn btn-outline-primary py-2" for="linea-CMB">CMB</label>
+                    </div>
+                </div>
+
+                <!-- 2. Campo de Texto Cdg Elvis -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Cdg Elvis (máx. 5 dígitos):</label>
+                    <!-- oninput se encarga de que solo se ingresen números y máximo 5 -->
+                    <input type="text" id="cdgElvis" class="form-control form-control-lg text-center" 
+                           placeholder="Ej: 1352" maxlength="5" 
+                           oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 5)">
+                </div>
+
+                <!-- 3. Botón Consultar -->
+                <button class="btn btn-success btn-lg w-100 fw-bold" onclick="buscar()">
+                    <i class="bi bi-file-earmark-medical"></i> Consultar Parrilla Sugerida
+                </button>
+
+            </div>
+        </div>
+
+        <!-- Contenedor de Resultados -->
+        <div id="resultado" class="card p-4" style="display:none;"></div>
+    </div>
+
+    <script>
+        // --- LÓGICA DE NETLIFY IDENTITY ---
+        function abrirLoginNetlify() { netlifyIdentity.open(); }
+        function cerrarSesionNetlify() { netlifyIdentity.logout(); window.location.reload(); }
+
+        netlifyIdentity.on('init', user => { if (user) mostrarApp(user); });
+        netlifyIdentity.on('login', user => { netlifyIdentity.close(); mostrarApp(user); });
+
+        function mostrarApp(user) {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-screen').style.display = 'block';
+            document.getElementById('welcome-text').innerText = "Bienvenido, " + user.email;
+        }
+        netlifyIdentity.init();
+
+        // --- LÓGICA DE BÚSQUEDA ---
+        async function buscar() {
+            // 1. Obtener la línea seleccionada
+            const radioSeleccionado = document.querySelector('input[name="linea"]:checked');
+            if (!radioSeleccionado) {
+                alert("Por favor, seleccione una línea.");
+                return;
+            }
+            const linea = radioSeleccionado.value;
+
+            // 2. Obtener el Cdg Elvis
+            const cdgElvis = document.getElementById('cdgElvis').value.trim();
+            const divResultado = document.getElementById('resultado');
+
+            if (!cdgElvis) {
+                alert("Por favor, ingrese el Cdg Elvis.");
+                return;
+            }
+
+            divResultado.style.display = 'block';
+            divResultado.innerHTML = '<div class="text-center text-primary"><div class="spinner-border"></div><p class="mt-2">Consultando base de datos...</p></div>';
+
+            // 3. Concatenar Línea + '_' + Código
+            const idBuscar = `${linea}_${cdgElvis}`;
+
+            try {
+                const user = netlifyIdentity.currentUser();
+                const token = user ? user.token.access_token : '';
+
+                const response = await fetch('/.netlify/functions/seatable-proxy', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ idToSearch: idBuscar })
+                });
+
+                if (response.status === 401) throw new Error("Sesión expirada. Recargue la página.");
+                
+                const data = await response.json();
+                if (!data.success) throw new Error(data.message || 'Error al consultar.');
+
+                const registros = data.data || [];
+
+                if (registros.length === 0) {
+                    divResultado.innerHTML = `<div class="alert alert-warning text-center fw-bold">
+                        <i class="bi bi-exclamation-triangle-fill"></i> No se encontró información para el código: <strong>${idBuscar}</strong>
+                    </div>`;
+                    return;
+                }
+
+                // 4. Renderizar la tabla con los resultados devueltos por SQL
+                const registro = registros[0];
+                const columnas = Object.keys(registro);
+
+                let html = `<h5 class="mb-3 text-success"><i class="bi bi-check-circle-fill"></i> Parrilla Encontrada</h5>`;
+                html += '<div class="table-responsive"><table class="table table-striped table-hover table-bordered align-middle">';
+                html += '<thead class="table-dark"><tr>';
+                columnas.forEach(col => html += `<th>${col}</th>`);
+                html += '</tr></thead><tbody><tr>';
+                columnas.forEach(col => html += `<td>${registro[col] !== null ? registro[col] : ''}</td>`);
+                html += '</tr></tbody></table></div>';
+
+                divResultado.innerHTML = html;
+
+            } catch (error) {
+                console.error("Error:", error);
+                divResultado.innerHTML = `<div class="alert alert-danger text-center"><i class="bi bi-x-circle-fill"></i> ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
