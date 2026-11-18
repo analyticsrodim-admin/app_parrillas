@@ -16,7 +16,7 @@ exports.handler = async (event, context) => {
     const authResponse = await fetch(`${SEATABLE_SERVER}/api/v2.1/dtable/app-access-token/`, {
       method: 'GET',
       headers: {
-        'Authorization': `Token ${SEATABLE_API_TOKEN}`,
+        'Authorization': `Bearer ${SEATABLE_API_TOKEN}`,
         'Accept': 'application/json; charset=utf-8; indent=4',
       },
     });
